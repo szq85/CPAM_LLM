@@ -139,7 +139,7 @@ Verified Solution
 
 **LLM Integration**:
 - Fine-tuned models for constraint programming domain
-- Claude API integration for semantic understanding
+- LLM API integration for semantic understanding
 - Structured output generation in JSON format
 
 **Solver Support**:
