@@ -1,0 +1,19 @@
+Detailed Description:
+
+Constraint 1: Voltage Limitation - The total system output voltage must be strictly maintained within the preset safe power supply range;
+
+Constraint 2: Overload Protection - The current flowing through any activated battery module must not exceed its maximum safe threshold;
+
+Constraint 3: Current Balancing - At any given time, the number of battery modules connected in parallel in all series branches of the system must remain strictly consistent;
+
+Constraint 4: Optimization Objective - Minimize the total net energy loss of all activated modules, including internal resistance loss during module activation and electrochemical recovery effects during non-activation.
+
+
+
+
+
+Additional Requirements:
+The total number of uses of any two modules across all cycles must differ by a maximum of one;
+The maximum number of switches allowed to change state between each time period is 6;
+No more than two modules are allowed to be activated simultaneously in a 2x2 module matrix;
+The battery module in the first row and first column must be faulty.

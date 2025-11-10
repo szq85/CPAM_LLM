@@ -1,0 +1,19 @@
+Specific Description: 
+
+Constraint 1: Full Demand Coverage - Each defined demand area (e.g., residential areas, commercial centers, transportation hubs, etc.) has its predicted charging demand;
+
+Constraint 2: Site Capacity Limitation - Each candidate site has its maximum service capacity limit;
+
+Constraint 3: Optimization Objective - Minimize the sum of the fixed construction costs of all operational sites and the total service cost for all users to determine where to build charging stations.
+
+
+
+
+
+New Demands:
+Demand areas expanded from 30 to 40;
+Transportation costs between any demand area and its assigned charging station must not exceed 20;
+The sum of the fixed costs of all newly built charging stations must be strictly controlled within the budget range of 20,000 to 25,000;
+The actual load of all operational charging stations must not exceed 90% of their total design capacity;
+Only one site can be built if the distance between any two candidate sites is no more than 10.
+For any two candidate sites with the most similar cost characteristics (ranked in the nearest 10% of all site pairs), only one site can be built.

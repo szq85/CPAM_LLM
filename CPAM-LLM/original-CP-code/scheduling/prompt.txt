@@ -1,0 +1,20 @@
+Constraint Descriptions:
+
+Constraint 1: Each workpiece must be processed sequentially according to a preset process.
+
+Constraint 2: Each process has multiple selectable machines with varying processing times.
+
+Constraint 3: A machine can only process one task at a time.
+
+Constraint 4: Automatically handle 'tight constraints' (<=15) and 'loose constraints' (>=30) between processes.
+
+Constraint 5: Minimize the maximum completion time (Makespan) for all workpieces.
+
+
+New Requirements:
+The start time of workpiece 1 must be between 20 and 100;
+All processes of workpiece 2 must begin after time 10 and be completed before time 500;
+All processes of workpiece 3 must begin after all processes of workpiece 2 are completed;
+The first process of workpiece 4 must begin after the second process of workpiece 3 is completed;
+The end time of the first process of workpiece 5 must be between 500 and 600;
+On the same machine, there is a 20-second switchover time between processes processing different workpieces. If the preceding and following processes belong to the same workpiece, no switchover time is required.

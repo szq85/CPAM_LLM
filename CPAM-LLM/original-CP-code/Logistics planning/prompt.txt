@@ -1,0 +1,19 @@
+Specific Description:
+Constraint 1: Capacity Limit - The total amount of goods delivered by each autonomous vehicle must not exceed its maximum load capacity.
+
+Constraint 2: Demand Satisfaction - Each customer point must be visited by one and only one autonomous vehicle to satisfy its total cargo demand.
+
+Constraint 3: Closed-Loop Path - Each vehicle must depart from the central warehouse, serve its assigned customer point, and ultimately return to the central warehouse.
+
+Constraint 4: No Intersecting Paths - The generated path set must be logically conflict-free and executable.
+
+Constraint 5: Optimization Objective - Minimize the total travel distance of the entire autonomous vehicle fleet to complete all delivery tasks.
+
+
+
+
+New Requirements:
+Ignore autonomous vehicle load capacity limits;
+Each service point has a specific time window during which it must be visited, and the autonomous vehicle must arrive within this timeframe;
+The maximum load capacity for each autonomous vehicle is 180;
+According to the latest information, service point number 5 has been removed from the delivery network due to closure.

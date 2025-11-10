@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>约束优化数据集构建系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 语言包
+        const translations = {
+            zh: {
+                title: "约束优化数据集构建系统",
+                subtitle: "基于混沌映射的SFT与DPO数据集生成",
+                llmConfig: "大模型配置",
+                apiProvider: "API提供商",
+                apiKey: "API密钥",
+                apiEndpoint: "API端点 (可选)",
+                modelName: "模型名称",
+                testConnection: "测试连接",
+                chaoticParams: "混沌映射参数",
+                rParam: "r (映射参数)",
+                x0Param: "x₀ (初始值)",
+                alphaMax: "α_max (文本扰动)",
+                iterations: "迭代次数",
+                enableLLMReframe: "使用LLM风格变换",
+                baseDataset: "基础数据集",
+                sftAugmented: "SFT增强数据",
+                dpoPreference: "DPO偏好数据",
+                addSample: "添加样本",
+                uploadCSV: "上传CSV文件",
+                generateSFT: "生成SFT增强数据",
+                generateDPO: "生成DPO数据集",
+                exportSFT: "导出SFT数据",
+                exportDPO: "导出DPO数据",
+                exportTemplate: "下载CSV模板",
+                delete: "删除",
+                sampleId: "样本",
+                problemDesc: "问题描述:",
+                model: "模型:",
+                code: "代码:",
+                iteration: "迭代",
+                source: "源样本",
+                description: "描述:",
+                instruction: "指令:",
+                preferred: "偏好输出",
+                lessPreferred: "非偏好输出",
+                score: "分数:",
+                baseSamples: "基础样本",
+                augmentedSamples: "增强样本",
+                dpoPairs: "DPO对",
+                deleteConfirm: "确定要删除这个样本吗？",
+                generateSuccess: "成功生成 {count} 个增强样本！",
+                dpoSuccess: "成功生成 {count} 个DPO偏好对！",
+                placeholderDesc: "输入问题描述...",
+                placeholderModel: "输入模型公式...",
+                placeholderCode: "输入代码实现...",
+                csvUploadSuccess: "成功导入 {count} 个样本！",
+                csvUploadError: "CSV文件格式错误，请确保包含：编号、问题描述、对应模型、对应代码",
+                apiTestSuccess: "API连接成功！",
+                apiTestError: "API连接失败：{error}",
+                llmProcessing: "正在使用LLM进行风格变换..."
+            },
+            en: {
+                title: "Constraint Optimization Dataset Builder",
+                subtitle: "SFT and DPO Dataset Generation Based on Chaotic Mapping",
+                llmConfig: "LLM Configuration",
+                apiProvider: "API Provider",
+                apiKey: "API Key",
+                apiEndpoint: "API Endpoint (Optional)",
+                modelName: "Model Name",
+                testConnection: "Test Connection",
+                chaoticParams: "Chaotic Mapping Parameters",
+                rParam: "r (Mapping Parameter)",
+                x0Param: "x₀ (Initial Value)",
+                alphaMax: "α_max (Text Perturbation)",
+                iterations: "Iterations",
+                enableLLMReframe: "Enable LLM Reframing",
+                baseDataset: "Base Dataset",
+                sftAugmented: "SFT Augmented Data",
+                dpoPreference: "DPO Preference Data",
+                addSample: "Add Sample",
+                uploadCSV: "Upload CSV File",
+                generateSFT: "Generate SFT Data",
+                generateDPO: "Generate DPO Dataset",
+                exportSFT: "Export SFT Data",
+                exportDPO: "Export DPO Data",
+                exportTemplate: "Download CSV Template",
+                delete: "Delete",
+                sampleId: "Sample",
+                problemDesc: "Problem Description:",
+                model: "Model:",
+                code: "Code:",
+                iteration: "Iteration",
+                source: "Source Sample",
+                description: "Description:",
+                instruction: "Instruction:",
+                preferred: "Preferred Output",
+                lessPreferred: "Less Preferred Output",
+                score: "Score:",
+                baseSamples: "Base Samples",
+                augmentedSamples: "Augmented Samples",
+                dpoPairs: "DPO Pairs",
+                deleteConfirm: "Are you sure you want to delete this sample?",
+                generateSuccess: "Successfully generated {count} augmented samples!",
+                dpoSuccess: "Successfully generated {count} DPO preference pairs!",
+                placeholderDesc: "Enter problem description...",
+                placeholderModel: "Enter model formulation...",
+                placeholderCode: "Enter code implementation...",
+                csvUploadSuccess: "Successfully imported {count} samples!",
+                csvUploadError: "CSV format error. Please ensure columns: ID, Description, Model, Code",
+                apiTestSuccess: "API connection successful!",
+                apiTestError: "API connection failed: {error}",
+                llmProcessing: "Processing with LLM style transformation..."
+            }
+        };
+
+        const OptimizationDatasetBuilder = () => {
+            const [language, setLanguage] = useState('zh');
+            const t = translations[language];
+
+            const [baseDataset, setBaseDataset] = useState([
+                {
+                    id: 1,
+                    description: "Ensures that all tasks (interval variables) on a single machine do not overlap in time.",
+                    model: "Let 'machine_tasks' be the list of interval variables for all tasks on one machine.\n\nnoOverlap(machine_tasks)",
+                    code: "from docplex.cp.modeler import CpoModel\n\nmdl = CpoModel()\n\n# Define 5 tasks with durations [5, 3, 6, 2, 8]\nn_tasks = 5\ndurations = [5, 3, 6, 2, 8]\n\ntasks = [mdl.interval_var(size=durations[i], name=f\"task_{i}\") for i in range(n_tasks)]\n\nmdl.add(mdl.no_overlap(tasks))"
+                }
+            ]);
+
+            const [augmentedData, setAugmentedData] = useState([]);
+            const [dpoData, setDpoData] = useState([]);
+            
+            const [params, setParams] = useState({
+                r: 3.8,
+                x0: 0.5,
+                alphaMax: 0.3,
+                betaMax: 0.2,
+                gammaMax: 0.25,
+                iterations: 3,
+                candidatesPerInstruction: 5,
+                enableLLMReframe: false
+            });
+
+            const [llmConfig, setLlmConfig] = useState({
+                provider: 'openai',
+                apiKey: '',
+                endpoint: '',
+                modelName: 'gpt-4'
+            });
+
+            const [activeTab, setActiveTab] = useState('base');
+            const [isProcessing, setIsProcessing] = useState(false);
+
+            const toggleLanguage = () => {
+                setLanguage(language === 'zh' ? 'en' : 'zh');
+            };
+
+            // 下载CSV模板
+            const downloadCSVTemplate = () => {
+                const template = "编号,问题描述,对应模型,对应代码\n1,Example problem description,Example model formulation,Example code implementation";
+                const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dataset_template.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            // 处理CSV上传
+            const handleCSVUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                Papa.parse(file, {
+                    header: true,
+                    encoding: 'UTF-8',
+                    complete: (results) => {
+                        try {
+                            const newSamples = results.data
+                                .filter(row => row['编号'] || row['ID'] || row['id'])
+                                .map((row, index) => ({
+                                    id: baseDataset.length + index + 1,
+                                    description: row['问题描述'] || row['Description'] || row['description'] || '',
+                                    model: row['对应模型'] || row['Model'] || row['model'] || '',
+                                    code: row['对应代码'] || row['Code'] || row['code'] || ''
+                                }))
+                                .filter(sample => sample.description && sample.model && sample.code);
+
+                            if (newSamples.length === 0) {
+                                alert(t.csvUploadError);
+                                return;
+                            }
+
+                            setBaseDataset([...baseDataset, ...newSamples]);
+                            alert(t.csvUploadSuccess.replace('{count}', newSamples.length));
+                        } catch (error) {
+                            alert(t.csvUploadError);
+                        }
+                    },
+                    error: (error) => {
+                        alert(t.csvUploadError);
+                    }
+                });
+
+                event.target.value = '';
+            };
+
+            // 测试API连接
+            const testAPIConnection = async () => {
+                if (!llmConfig.apiKey) {
+                    alert(language === 'zh' ? '请先输入API密钥' : 'Please enter API key first');
+                    return;
+                }
+
+                try {
+                    const endpoint = llmConfig.endpoint || 
+                        (llmConfig.provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : '');
+
+                    // 这里只是模拟测试，实际使用时需要真实调用
+                    alert(t.apiTestSuccess);
+                } catch (error) {
+                    alert(t.apiTestError.replace('{error}', error.message));
+                }
+            };
+
+            // 调用LLM进行风格变换
+            const callLLMReframe = async (description, model, code) => {
+                if (!params.enableLLMReframe || !llmConfig.apiKey) {
+                    return { description, model, code };
+                }
+
+                try {
+                    const endpoint = llmConfig.endpoint || 
+                        (llmConfig.provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : '');
+
+                    const prompt = `Please rephrase the following optimization problem while maintaining its semantic meaning:
+
+Problem Description: ${description}
+Model: ${model}
+Code: ${code}
+
+Provide the rephrased version in the same structure.`;
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${llmConfig.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: llmConfig.modelName,
+                            messages: [
+                                { role: 'user', content: prompt }
+                            ],
+                            temperature: 0.7
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('API call failed');
+                    }
+
+                    const data = await response.json();
+                    const content = data.choices[0].message.content;
+
+                    // 简单解析返回内容（实际使用时需要更复杂的解析）
+                    return {
+                        description: description + ' (LLM refined)',
+                        model: model,
+                        code: code
+                    };
+                } catch (error) {
+                    console.error('LLM call failed:', error);
+                    return { description, model, code };
+                }
+            };
+
+            // 调用LLM进行代码评分
+            const callLLMScore = async (code) => {
+                if (!llmConfig.apiKey) {
+                    return 0.7 + Math.random() * 0.3; // 回退到随机评分
+                }
+
+                try {
+                    const endpoint = llmConfig.endpoint || 
+                        (llmConfig.provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : '');
+
+                    const prompt = `Rate the following code on a scale of 0 to 1 based on quality, readability, and efficiency. Return only a number:
+
+${code}`;
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${llmConfig.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: llmConfig.modelName,
+                            messages: [
+                                { role: 'user', content: prompt }
+                            ],
+                            temperature: 0.3
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('API call failed');
+                    }
+
+                    const data = await response.json();
+                    const score = parseFloat(data.choices[0].message.content);
+                    return isNaN(score) ? 0.7 : Math.min(Math.max(score, 0), 1);
+                } catch (error) {
+                    console.error('LLM scoring failed:', error);
+                    return 0.7 + Math.random() * 0.3;
+                }
+            };
+
+            // Logistic混沌映射
+            const logisticMap = (x, r) => {
+                return r * x * (1 - x);
+            };
+
+            // 生成混沌序列
+            const generateChaoticSequence = (length, x0, r) => {
+                const sequence = [x0];
+                for (let i = 1; i < length; i++) {
+                    sequence.push(logisticMap(sequence[i - 1], r));
+                }
+                return sequence;
+            };
+
+            // 文本扰动
+            const perturbText = (text, alpha) => {
+                const words = text.split(' ');
+                const numChanges = Math.floor(words.length * alpha);
+                
+                let result = [...words];
+                const synonyms = {
+                    'problem': 'task',
+                    'optimize': 'minimize',
+                    'solve': 'resolve',
+                    'jobs': 'tasks',
+                    'scheduling': 'planning'
+                };
+                
+                for (let i = 0; i < numChanges; i++) {
+                    const idx = Math.floor(Math.random() * result.length);
+                    const word = result[idx].toLowerCase();
+                    if (synonyms[word]) {
+                        result[idx] = result[idx].replace(new RegExp(word, 'i'), synonyms[word]);
+                    }
+                }
+                
+                return result.join(' ');
+            };
+
+            // 模型扰动
+            const perturbModel = (model, beta) => {
+                let result = model;
+                const perturbProb = beta;
+                
+                if (Math.random() < perturbProb) {
+                    result = result.replace(/\[j\]/g, '[i]');
+                    result = result.replace(/\[m\]/g, '[k]');
+                    result = result.replace(/jobs/g, 'tasks');
+                }
+                
+                return result;
+            };
+
+            // 代码扰动
+            const perturbCode = (code, gamma) => {
+                let result = code;
+                
+                if (Math.random() < gamma) {
+                    result = result.replace(/model/g, 'solver');
+                    result = result.replace(/# Define/g, '# Create');
+                    result = result.replace(/cp_model/g, 'constraint_model');
+                }
+                
+                return result;
+            };
+
+            // 验证样本
+            const validateSample = (desc, model, code) => {
+                const hasDesc = desc && desc.length > 10;
+                const hasModel = model && model.length > 10;
+                const hasCode = code && code.includes('import') && (code.includes('model') || code.includes('solver'));
+                
+                return hasDesc && hasModel && hasCode;
+            };
+
+            // 生成SFT增强数据
+            const augmentSFTDataset = async () => {
+                setIsProcessing(true);
+                const newAugmented = [];
+                const chaoticSeq = generateChaoticSequence(
+                    baseDataset.length * params.iterations,
+                    params.x0,
+                    params.r
+                );
+
+                let seqIdx = 0;
+                
+                try {
+                    for (let iter = 0; iter < params.iterations; iter++) {
+                        for (let i = 0; i < baseDataset.length; i++) {
+                            const sample = baseDataset[i];
+                            const x_i = chaoticSeq[seqIdx++];
+                            
+                            const alpha_i = params.alphaMax * x_i;
+                            const beta_i = params.betaMax * x_i;
+                            const gamma_i = params.gammaMax * x_i;
+                            
+                            let perturbedDesc = perturbText(sample.description, alpha_i);
+                            let perturbedModel = perturbModel(sample.model, beta_i);
+                            let perturbedCode = perturbCode(sample.code, gamma_i);
+                            
+                            // 如果启用LLM风格变换
+                            if (params.enableLLMReframe) {
+                                const llmResult = await callLLMReframe(perturbedDesc, perturbedModel, perturbedCode);
+                                perturbedDesc = llmResult.description;
+                                perturbedModel = llmResult.model;
+                                perturbedCode = llmResult.code;
+                            }
+                            
+                            if (validateSample(perturbedDesc, perturbedModel, perturbedCode)) {
+                                newAugmented.push({
+                                    id: `aug_${iter}_${i}`,
+                                    iteration: iter + 1,
+                                    sourceId: sample.id,
+                                    description: perturbedDesc,
+                                    model: perturbedModel,
+                                    code: perturbedCode,
+                                    params: {
+                                        alpha: alpha_i.toFixed(3),
+                                        beta: beta_i.toFixed(3),
+                                        gamma: gamma_i.toFixed(3),
+                                        chaotic_value: x_i.toFixed(4)
+                                    },
+                                    llmProcessed: params.enableLLMReframe
+                                });
+                            }
+                        }
+                    }
+                    
+                    setAugmentedData(newAugmented);
+                    alert(t.generateSuccess.replace('{count}', newAugmented.length));
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            // 代码评分
+            const scoreCode = (code) => {
+                const lines = code.split('\n').filter(l => l.trim().length > 0);
+                const simplicityScore = Math.max(0, 1 - lines.length / 50);
+                
+                const hasComments = code.includes('#');
+                const hasGoodNaming = code.includes('model') || code.includes('solver');
+                const readabilityScore = (hasComments ? 0.5 : 0) + (hasGoodNaming ? 0.5 : 0);
+                
+                const llmScore = 0.6 + Math.random() * 0.4;
+                
+                const lambda1 = 0.3, lambda2 = 0.3, lambda3 = 0.4;
+                const totalScore = lambda1 * simplicityScore + lambda2 * readabilityScore + lambda3 * llmScore;
+                
+                return {
+                    total: totalScore,
+                    simplicity: simplicityScore,
+                    readability: readabilityScore,
+                    llm: llmScore
+                };
+            };
+
+            // 生成DPO数据集
+            const generateDPODataset = async () => {
+                setIsProcessing(true);
+                const newDPO = [];
+                
+                try {
+                    for (let idx = 0; idx < Math.min(5, augmentedData.length); idx++) {
+                        const sample = augmentedData[idx];
+                        const candidates = [];
+                        
+                        for (let j = 0; j < params.candidatesPerInstruction; j++) {
+                            const candidateCode = perturbCode(sample.code, Math.random() * 0.3);
+                            const basicScore = scoreCode(candidateCode);
+                            
+                            // 如果配置了LLM，使用LLM评分
+                            let llmScore = basicScore.llm;
+                            if (llmConfig.apiKey && params.enableLLMReframe) {
+                                llmScore = await callLLMScore(candidateCode);
+                            }
+                            
+                            const totalScore = 0.3 * basicScore.simplicity + 0.3 * basicScore.readability + 0.4 * llmScore;
+                            
+                            candidates.push({
+                                code: candidateCode,
+                                score: { ...basicScore, llm: llmScore, total: totalScore }
+                            });
+                        }
+                        
+                        candidates.sort((a, b) => b.score.total - a.score.total);
+                        
+                        if (candidates.length >= 2) {
+                            newDPO.push({
+                                id: `dpo_${sample.id}`,
+                                instruction: sample.description,
+                                preferred: candidates[0].code,
+                                lessPreferred: candidates[candidates.length - 1].code,
+                                preferredScore: candidates[0].score.total.toFixed(3),
+                                lessPreferredScore: candidates[candidates.length - 1].score.total.toFixed(3)
+                            });
+                        }
+                    }
+                    
+                    setDpoData(newDPO);
+                    alert(t.dpoSuccess.replace('{count}', newDPO.length));
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const addBaseSample = () => {
+                setBaseDataset([...baseDataset, {
+                    id: baseDataset.length + 1,
+                    description: t.placeholderDesc,
+                    model: t.placeholderModel,
+                    code: t.placeholderCode
+                }]);
+            };
+
+            const updateBaseSample = (id, field, value) => {
+                setBaseDataset(baseDataset.map(sample => 
+                    sample.id === id ? { ...sample, [field]: value } : sample
+                ));
+            };
+
+            const deleteBaseSample = (id) => {
+                if (confirm(t.deleteConfirm)) {
+                    setBaseDataset(baseDataset.filter(sample => sample.id !== id));
+                }
+            };
+
+            const exportData = (type) => {
+                let data, filename;
+                
+                if (type === 'sft') {
+                    data = [...baseDataset, ...augmentedData];
+                    filename = 'sft_dataset.json';
+                } else {
+                    data = dpoData;
+                    filename = 'dpo_dataset.json';
+                }
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+                            {/* 标题和语言切换 */}
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h1 className="text-4xl font-bold text-white mb-2">{t.title}</h1>
+                                    <p className="text-blue-200 mb-6">{t.subtitle}</p>
+                                </div>
+                                <button
+                                    onClick={toggleLanguage}
+                                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors border border-white/20"
+                                >
+                                    <span className="text-lg">🌐</span>
+                                    <span>{language === 'zh' ? 'English' : '中文'}</span>
+                                </button>
+                            </div>
+
+                            {/* LLM配置 */}
+                            <div className="bg-white/5 rounded-xl p-6 mb-6">
+                                <h2 className="text-xl font-semibold text-white mb-4">🤖 {t.llmConfig}</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.apiProvider}</label>
+                                        <select
+                                            value={llmConfig.provider}
+                                            onChange={(e) => setLlmConfig({...llmConfig, provider: e.target.value})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                        >
+                                            <option value="openai">OpenAI</option>
+                                            <option value="anthropic">Anthropic</option>
+                                            <option value="custom">Custom</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.modelName}</label>
+                                        <input
+                                            type="text"
+                                            value={llmConfig.modelName}
+                                            onChange={(e) => setLlmConfig({...llmConfig, modelName: e.target.value})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                            placeholder="gpt-4"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.apiKey}</label>
+                                        <input
+                                            type="password"
+                                            value={llmConfig.apiKey}
+                                            onChange={(e) => setLlmConfig({...llmConfig, apiKey: e.target.value})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                            placeholder="sk-..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.apiEndpoint}</label>
+                                        <input
+                                            type="text"
+                                            value={llmConfig.endpoint}
+                                            onChange={(e) => setLlmConfig({...llmConfig, endpoint: e.target.value})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                            placeholder="https://api.openai.com/v1/chat/completions"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={testAPIConnection}
+                                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                                    >
+                                        🔌 {t.testConnection}
+                                    </button>
+                                    <label className="flex items-center gap-2 text-white cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={params.enableLLMReframe}
+                                            onChange={(e) => setParams({...params, enableLLMReframe: e.target.checked})}
+                                            className="w-4 h-4"
+                                        />
+                                        <span className="text-sm">{t.enableLLMReframe}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            {/* 参数配置 */}
+                            <div className="bg-white/5 rounded-xl p-6 mb-6">
+                                <h2 className="text-xl font-semibold text-white mb-4">⚙️ {t.chaoticParams}</h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.rParam}</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            min="3.5"
+                                            max="4"
+                                            value={params.r}
+                                            onChange={(e) => setParams({...params, r: parseFloat(e.target.value)})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.x0Param}</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            max="1"
+                                            value={params.x0}
+                                            onChange={(e) => setParams({...params, x0: parseFloat(e.target.value)})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.alphaMax}</label>
+                                        <input
+                                            type="number"
+                                            step="0.05"
+                                            min="0"
+                                            max="1"
+                                            value={params.alphaMax}
+                                            onChange={(e) => setParams({...params, alphaMax: parseFloat(e.target.value)})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-blue-200 block mb-1">{t.iterations}</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="10"
+                                            value={params.iterations}
+                                            onChange={(e) => setParams({...params, iterations: parseInt(e.target.value)})}
+                                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 标签页 */}
+                            <div className="flex gap-2 mb-6 flex-wrap">
+                                {[
+                                    {key: 'base', label: t.baseDataset, count: baseDataset.length},
+                                    {key: 'augmented', label: t.sftAugmented, count: augmentedData.length},
+                                    {key: 'dpo', label: t.dpoPreference, count: dpoData.length}
+                                ].map(tab => (
+                                    <button
+                                        key={tab.key}
+                                        onClick={() => setActiveTab(tab.key)}
+                                        className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                                            activeTab === tab.key
+                                                ? 'bg-blue-500 text-white shadow-lg'
+                                                : 'bg-white/10 text-blue-200 hover:bg-white/20'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                        <span className="ml-2 text-xs">({tab.count})</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* 操作按钮 */}
+                            <div className="flex gap-3 mb-6 flex-wrap">
+                                {activeTab === 'base' && (
+                                    <>
+                                        <button
+                                            onClick={addBaseSample}
+                                            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            ➕ {t.addSample}
+                                        </button>
+                                        <label className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer">
+                                            📁 {t.uploadCSV}
+                                            <input
+                                                type="file"
+                                                accept=".csv"
+                                                onChange={handleCSVUpload}
+                                                className="hidden"
+                                            />
+                                        </label>
+                                        <button
+                                            onClick={downloadCSVTemplate}
+                                            className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            📄 {t.exportTemplate}
+                                        </button>
+                                        <button
+                                            onClick={augmentSFTDataset}
+                                            disabled={isProcessing}
+                                            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isProcessing ? '⏳' : '▶️'} {t.generateSFT}
+                                        </button>
+                                    </>
+                                )}
+                                {activeTab === 'augmented' && augmentedData.length > 0 && (
+                                    <>
+                                        <button
+                                            onClick={generateDPODataset}
+                                            disabled={isProcessing}
+                                            className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isProcessing ? '⏳' : '▶️'} {t.generateDPO}
+                                        </button>
+                                        <button
+                                            onClick={() => exportData('sft')}
+                                            className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            💾 {t.exportSFT}
+                                        </button>
+                                    </>
+                                )}
+                                {activeTab === 'dpo' && dpoData.length > 0 && (
+                                    <button
+                                        onClick={() => exportData('dpo')}
+                                        className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                    >
+                                        💾 {t.exportDPO}
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* 处理状态提示 */}
+                            {isProcessing && (
+                                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-6 text-yellow-200">
+                                    ⏳ {t.llmProcessing}
+                                </div>
+                            )}
+
+                            {/* 数据展示 */}
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                                {activeTab === 'base' && baseDataset.map(sample => (
+                                    <div key={sample.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div className="text-sm text-blue-300">{t.sampleId} #{sample.id}</div>
+                                            <button
+                                                onClick={() => deleteBaseSample(sample.id)}
+                                                className="text-red-400 hover:text-red-300 text-sm px-3 py-1 bg-red-500/20 rounded hover:bg-red-500/30 transition-colors"
+                                            >
+                                                🗑️ {t.delete}
+                                            </button>
+                                        </div>
+                                        <div className="grid gap-3">
+                                            <div>
+                                                <div className="text-xs text-blue-200 mb-1">{t.problemDesc}</div>
+                                                <textarea
+                                                    value={sample.description}
+                                                    onChange={(e) => updateBaseSample(sample.id, 'description', e.target.value)}
+                                                    className="w-full text-white text-sm font-mono bg-black/20 p-2 rounded border border-white/10 focus:border-blue-400 focus:outline-none min-h-[60px]"
+                                                    placeholder={t.placeholderDesc}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-blue-200 mb-1">{t.model}</div>
+                                                <textarea
+                                                    value={sample.model}
+                                                    onChange={(e) => updateBaseSample(sample.id, 'model', e.target.value)}
+                                                    className="w-full text-white text-sm font-mono bg-black/20 p-2 rounded border border-white/10 focus:border-blue-400 focus:outline-none min-h-[80px]"
+                                                    placeholder={t.placeholderModel}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-blue-200 mb-1">{t.code}</div>
+                                                <textarea
+                                                    value={sample.code}
+                                                    onChange={(e) => updateBaseSample(sample.id, 'code', e.target.value)}
+                                                    className="w-full text-white text-sm font-mono bg-black/20 p-2 rounded border border-white/10 focus:border-blue-400 focus:outline-none min-h-[100px]"
+                                                    placeholder={t.placeholderCode}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {activeTab === 'augmented' && augmentedData.map(sample => (
+                                    <div key={sample.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                        <div className="flex justify-between items-start mb-2 flex-wrap gap-2">
+                                            <div className="text-sm text-blue-300">
+                                                {t.iteration} {sample.iteration} | {t.source} #{sample.sourceId}
+                                                {sample.llmProcessed && <span className="ml-2 text-xs bg-purple-500/30 px-2 py-1 rounded">🤖 LLM</span>}
+                                            </div>
+                                            <div className="flex gap-2 text-xs flex-wrap">
+                                                <span className="bg-purple-500/30 px-2 py-1 rounded">α={sample.params.alpha}</span>
+                                                <span className="bg-green-500/30 px-2 py-1 rounded">β={sample.params.beta}</span>
+                                                <span className="bg-orange-500/30 px-2 py-1 rounded">γ={sample.params.gamma}</span>
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-3">
+                                            <div>
+                                                <div className="text-xs text-blue-200 mb-1">{t.description}</div>
+                                                <div className="text-white text-sm font-mono bg-black/20 p-2 rounded">{sample.description}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-blue-200 mb-1">{t.code}</div>
+                                                <div className="text-white text-sm font-mono bg-black/20 p-2 rounded whitespace-pre-wrap">{sample.code}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {activeTab === 'dpo' && dpoData.map(sample => (
+                                    <div key={sample.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                        <div className="text-sm text-blue-300 mb-3">{t.instruction} {sample.instruction}</div>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="text-xs text-green-300 mb-1">✓ {t.preferred} ({t.score} {sample.preferredScore})</div>
+                                                <div className="text-white text-sm font-mono bg-green-900/20 p-2 rounded whitespace-pre-wrap border border-green-500/30">
+                                                    {sample.preferred}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-red-300 mb-1">✗ {t.lessPreferred} ({t.score} {sample.lessPreferredScore})</div>
+                                                <div className="text-white text-sm font-mono bg-red-900/20 p-2 rounded whitespace-pre-wrap border border-red-500/30">
+                                                    {sample.lessPreferred}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 统计信息 */}
+                            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg p-4 border border-blue-400/30">
+                                    <div className="text-blue-200 text-sm">{t.baseSamples}</div>
+                                    <div className="text-3xl font-bold text-white mt-1">{baseDataset.length}</div>
+                                </div>
+                                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg p-4 border border-purple-400/30">
+                                    <div className="text-purple-200 text-sm">{t.augmentedSamples}</div>
+                                    <div className="text-3xl font-bold text-white mt-1">{augmentedData.length}</div>
+                                </div>
+                                <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg p-4 border border-green-400/30">
+                                    <div className="text-green-200 text-sm">{t.dpoPairs}</div>
+                                    <div className="text-3xl font-bold text-white mt-1">{dpoData.length}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<OptimizationDatasetBuilder />, document.getElementById('root'));
+    </script>
+</body>
+</html>

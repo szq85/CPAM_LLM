@@ -1,0 +1,20 @@
+Problem Description:
+
+Constraint 1: Word Selection - All designed DNA sequences must be selected from a predefined word list;
+
+Constraint 2: GC Content - The GC content of each DNA sequence must be exactly 50%;
+
+Constraint 3: Inter-strand Orthogonality - The Hamming distance between any two distinct DNA sequences must be at least 4;
+
+Constraint 4: Self-Orthogonality - The Hamming distance between any DNA sequence and its corresponding inverse complementary sequence must be at least 4;
+
+Constraint 5: Optimization Objective - Design a set of 6 DNA sequences, each 8 bases long, that satisfy all the above constraints.
+
+
+New demands：
+Each DNA sequence must end with either a C or a G; 
+the total number of any two bases must not differ by more than 2 in all generated DNA sequences; 
+any 2-base sequence cannot be repeated; 
+none of the generated DNA sequences contain the ACTG subsequence;
+
+

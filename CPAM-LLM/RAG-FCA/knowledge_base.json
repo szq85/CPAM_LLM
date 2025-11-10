@@ -1,0 +1,212 @@
+{
+  "objects": [
+    "scheduling_1",
+    "dna_seq_opt_1",
+    "charging_loc_1",
+    "vrp_1",
+    "pv_storage_opt_1",
+    "battery_opt_1"
+  ],
+  "attributes": [
+    "temporal_periods",
+    "energy_loss_minimization",
+    "temporal_constraint",
+    "makespan_minimization",
+    "parallel_consistency",
+    "module_configuration",
+    "discrete_variables",
+    "location_selection",
+    "task_assignment",
+    "vehicle_assignment",
+    "capacity_constraint",
+    "current_limit",
+    "facility_location",
+    "battery_voltage_range",
+    "distance_minimization",
+    "routing_problem",
+    "precedence_constraint",
+    "binary_variables",
+    "demand_satisfaction",
+    "base_pair_complementarity",
+    "GC_content_constraint",
+    "reconfigurable_system",
+    "sequence_design"
+  ],
+  "relations": [
+    {
+      "object": "dna_seq_opt_1",
+      "attribute": "GC_content_constraint",
+      "degree": 1.0
+    },
+    {
+      "object": "dna_seq_opt_1",
+      "attribute": "base_pair_complementarity",
+      "degree": 1.0
+    },
+    {
+      "object": "dna_seq_opt_1",
+      "attribute": "sequence_design",
+      "degree": 1.0
+    },
+    {
+      "object": "dna_seq_opt_1",
+      "attribute": "discrete_variables",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "battery_voltage_range",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "energy_loss_minimization",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "module_configuration",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "capacity_constraint",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "current_limit",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "parallel_consistency",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "temporal_periods",
+      "degree": 1.0
+    },
+    {
+      "object": "battery_opt_1",
+      "attribute": "binary_variables",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "battery_voltage_range",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "energy_loss_minimization",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "module_configuration",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "reconfigurable_system",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "parallel_consistency",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "current_limit",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "temporal_periods",
+      "degree": 1.0
+    },
+    {
+      "object": "pv_storage_opt_1",
+      "attribute": "binary_variables",
+      "degree": 1.0
+    },
+    {
+      "object": "vrp_1",
+      "attribute": "capacity_constraint",
+      "degree": 1.0
+    },
+    {
+      "object": "vrp_1",
+      "attribute": "distance_minimization",
+      "degree": 1.0
+    },
+    {
+      "object": "vrp_1",
+      "attribute": "routing_problem",
+      "degree": 1.0
+    },
+    {
+      "object": "vrp_1",
+      "attribute": "vehicle_assignment",
+      "degree": 1.0
+    },
+    {
+      "object": "vrp_1",
+      "attribute": "discrete_variables",
+      "degree": 1.0
+    },
+    {
+      "object": "charging_loc_1",
+      "attribute": "capacity_constraint",
+      "degree": 1.0
+    },
+    {
+      "object": "charging_loc_1",
+      "attribute": "demand_satisfaction",
+      "degree": 1.0
+    },
+    {
+      "object": "charging_loc_1",
+      "attribute": "location_selection",
+      "degree": 1.0
+    },
+    {
+      "object": "charging_loc_1",
+      "attribute": "facility_location",
+      "degree": 1.0
+    },
+    {
+      "object": "charging_loc_1",
+      "attribute": "binary_variables",
+      "degree": 1.0
+    },
+    {
+      "object": "scheduling_1",
+      "attribute": "temporal_constraint",
+      "degree": 1.0
+    },
+    {
+      "object": "scheduling_1",
+      "attribute": "makespan_minimization",
+      "degree": 1.0
+    },
+    {
+      "object": "scheduling_1",
+      "attribute": "task_assignment",
+      "degree": 1.0
+    },
+    {
+      "object": "scheduling_1",
+      "attribute": "precedence_constraint",
+      "degree": 1.0
+    },
+    {
+      "object": "scheduling_1",
+      "attribute": "discrete_variables",
+      "degree": 1.0
+    }
+  ]
+}
