@@ -380,7 +380,3 @@ class CustomRAGFCA(RAGFCASystem):
 - `api_integration_example.py`: Examples with Claude API integration
 - `knowledge_base.json`: Exported knowledge base
 - `README.md`: This documentation
-
-## License
-
-This implementation is provided as-is for research and educational purposes.
