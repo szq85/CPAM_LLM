@@ -1,0 +1,2 @@
+Qwen2.5-Coder-7B-Instruct: Please refer to the instructions to download.
+https://www.modelscope.cn/models/Qwen/Qwen2.5-Coder-7B-Instruct
